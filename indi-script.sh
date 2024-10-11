@@ -1,9 +1,29 @@
 #!/bin/bash
 
 META_DIR="debian"
+REPO_URL="https://github.com/indilib/indi-3rdparty.git"
+REQUIRED_BINARIES=("git" "basename" "find" "dpkg")
+
+
+# Check if all required binaries are available
+for BINARY in "${REQUIRED_BINARIES[@]}"; do
+  if ! command -v "$BINARY" &> /dev/null; then
+    echo "Error: $BINARY is not installed. Please install the package that provides this binary or add to PATH "
+    exit 1
+  fi
+done
+
+# Clone the repository if it doesn't exist
+if [ ! -d "indi-3rdparty" ]; then
+  git clone "$REPO_URL"
+fi
+
+# Change into the repository directory
+cd "indi-3rdparty"
+
 
 # Get the list of drivers from the repository
-DRIVERS=$(find . -maxdepth 1 -type d -name "indi*")
+DRIVERS=$(find . -maxdepth 1 \( -type d -name "lib*" -o -type d -name "indi*" \))
 
 # Loop through each driver and extract the version and package name from the changelog file
 for DRIVER in $DRIVERS; do
@@ -20,14 +40,14 @@ for DRIVER in $DRIVERS; do
       VERSION=$(echo "$PACKAGE_INFO" | cut -d'(' -f2 | cut -d')' -f1)
       PACKAGE_NAME=$(echo "$PACKAGE_INFO" | cut -d' ' -f1)
 
-      # Get the last modified date of the changelog file
-      DATE=$(git log -1 --format=%ad --date=short -- "$DRIVER")
+      # Get the last modified date of the driver
+      DATE=$(git log -1 --format=%ad --date=format:%Y%m%d -- "$DRIVER")
 
       # Get the hash of the last commit
       HASH=$(git log -1 --format=%h -- "$DRIVER")
 
       # Create the package name in the format "version~gitLastModifiedDate.hash"
-      PACKAGE_NAME="$PACKAGE_NAME ${VERSION}~${DATE}.${HASH}"
+      PACKAGE_NAME="$PACKAGE_NAME ${VERSION}~git${DATE}.${HASH}"
 
       # Print the package name
       echo "$PACKAGE_NAME"
