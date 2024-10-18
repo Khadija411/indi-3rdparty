@@ -15,12 +15,25 @@ done
 
 # Clone the repository if it doesn't exist
 if [ ! -d "indi-3rdparty" ]; then
-  git clone "$REPO_URL"
+  if ! git clone "$REPO_URL"; then
+    echo "Error cloning repository: $REPO_URL" >> error.log
+    exit 1
+  fi
 fi
 
 # Change into the repository directory
 cd "indi-3rdparty"
 
+# Check if it's a git directory
+if git rev-parse --is-inside-work-tree; then
+  if ! git pull; then
+    echo "Error pulling repository: $REPO_URL" >> error.log
+    exit 1
+  fi
+else
+  echo "This is not a Git repository." >> error.log
+  exit 1
+fi
 
 # Get the list of drivers from the repository
 DRIVERS=$(find . -maxdepth 1 \( -type d -name "lib*" -o -type d -name "indi*" \))
@@ -50,7 +63,7 @@ for DRIVER in $DRIVERS; do
       PACKAGE_NAME="$PACKAGE_NAME ${VERSION}~git${DATE}.${HASH}"
 
       # Print the package name
-      echo "$PACKAGE_NAME"
+      echo "$PACKAGE_NAME" >> package_list.txt
     else
       echo "No package info found for $DRIVER_NAME"
     fi
