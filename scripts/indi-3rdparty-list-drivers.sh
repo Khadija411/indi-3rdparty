@@ -67,7 +67,7 @@ for DRIVER in $DRIVERS; do
       PACKAGE_NAME="$PACKAGE_NAME ${VERSION}~git${DATE}.${HASH}"
 
       # Print the package name
-      echo "$PACKAGE_NAME" >> $file
+      echo "$PACKAGE_NAME" >> package_list.txt
     else
       echo "No package info found for $DRIVER_NAME"
     fi
